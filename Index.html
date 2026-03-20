@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EstudarMZ — Gerador de Vídeo TikTok</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#050508; color:#fff; font-family:'Segoe UI',sans-serif; padding:16px; }
+.logo { text-align:center; padding:18px 0 6px; font-size:24px; font-weight:900;
+  background:linear-gradient(90deg,#ff0050,#ff4d00,#00f2ea,#ff0050);
+  background-size:300%; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  animation:flow 3s linear infinite; }
+@keyframes flow{to{background-position:300%;}}
+.sub{text-align:center;color:#444;font-size:11px;letter-spacing:3px;margin-bottom:18px;}
+.section{background:#0d0d15;border:1px solid #1a1a2e;border-radius:14px;padding:16px;margin-bottom:12px;}
+.stitle{font-size:10px;text-transform:uppercase;letter-spacing:3px;color:#ff0050;margin-bottom:12px;}
+label{display:block;font-size:11px;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;margin-top:10px;}
+label:first-of-type{margin-top:0;}
+input[type=text],select,textarea{width:100%;background:#111122;border:1px solid #222240;border-radius:8px;color:#fff;padding:10px 12px;font-size:14px;outline:none;font-family:inherit;}
+textarea{resize:vertical;min-height:60px;}
+select option{background:#111122;}
+.tpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.tpl-btn{background:#111122;border:1px solid #222240;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;font-size:11px;color:#888;transition:all 0.2s;}
+.tpl-btn span{font-size:20px;display:block;margin-bottom:4px;}
+.tpl-btn.active{border-color:#ff0050;color:#fff;background:#1a0010;}
+.preview-wrap{display:flex;justify-content:center;margin-bottom:12px;}
+canvas{border-radius:12px;border:2px solid #1a1a2e;max-width:90%;}
+.status{text-align:center;font-size:13px;color:#444;margin-bottom:8px;min-height:20px;padding:4px;}
+.status.ok{color:#00c896;} .status.rec{color:#ff0050;} .status.err{color:#ff4444;}
+.prog-wrap{display:none;margin-bottom:12px;}
+.prog-wrap.show{display:block;}
+.prog-bar{height:8px;background:#1a1a2e;border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,#ff0050,#ff4d00);width:0%;transition:width 0.1s;border-radius:4px;}
+.prog-txt{font-size:12px;color:#666;margin-top:6px;text-align:center;}
+.btn-row{display:flex;gap:10px;margin-bottom:12px;}
+.btn{flex:1;padding:15px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-prev{background:#1a1a2e;color:#00f2ea;border:1px solid #222;}
+.btn-rec{background:linear-gradient(135deg,#ff0050,#ff4d00);color:#fff;}
+.dl-section{display:none;background:#0d1a10;border:1px solid #1a3020;border-radius:14px;padding:16px;margin-bottom:12px;text-align:center;}
+.dl-section.show{display:block;}
+.dl-section h3{color:#00c896;font-size:14px;margin-bottom:10px;}
+.dl-section p{color:#888;font-size:12px;margin-bottom:14px;line-height:1.6;}
+.dl-btn{display:block;width:100%;padding:16px;background:linear-gradient(135deg,#00c896,#00f2ea);color:#000;font-size:16px;font-weight:900;border-radius:12px;text-decoration:none;margin-bottom:10px;letter-spacing:1px;}
+.video-preview{width:100%;border-radius:12px;margin-bottom:10px;max-height:300px;}
+</style>
+</head>
+<body>
+
+<div class="logo">🎬 VIDEO GENERATOR</div>
+<p class="sub">ESTUDARMZ · TIKTOK</p>
+
+<div class="section">
+  <div class="stitle">🎨 Template</div>
+  <div class="tpl-grid">
+    <div class="tpl-btn active" onclick="setTpl('pergunta',this)"><span>❓</span>Pergunta</div>
+    <div class="tpl-btn" onclick="setTpl('dica',this)"><span>💡</span>Dica</div>
+    <div class="tpl-btn" onclick="setTpl('motivacao',this)"><span>🔥</span>Motivação</div>
+    <div class="tpl-btn" onclick="setTpl('promo',this)"><span>📢</span>Promo</div>
+    <div class="tpl-btn" onclick="setTpl('resultado',this)"><span>🏆</span>Resultado</div>
+    <div class="tpl-btn" onclick="setTpl('custom',this)"><span>✏️</span>Custom</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="stitle">✍️ Conteúdo</div>
+  <label>Título</label>
+  <input type="text" id="l1" value="SABES ISTO? 🤔" maxlength="28">
+  <label>Texto principal</label>
+  <textarea id="l2" maxlength="100">A raiz quadrada de 144 é... 🤔</textarea>
+  <label>Resposta / CTA</label>
+  <input type="text" id="l3" value="É 12! 🎯 Pratica no EstudarMZ" maxlength="45">
+  <label>Rodapé</label>
+  <input type="text" id="rodape" value="📚 estudarmz.github.io">
+</div>
+
+<div class="section">
+  <div class="stitle">🎨 Estilo</div>
+  <label>Cores</label>
+  <select id="esquema" onchange="updatePreview()">
+    <option value="tiktok">🖤 TikTok (Preto + Vermelho)</option>
+    <option value="gold">✨ Gold (Escuro + Dourado)</option>
+    <option value="neon">💜 Neon (Roxo + Ciano)</option>
+    <option value="moz">🇲🇿 Moçambique (Verde + Amarelo)</option>
+    <option value="fire">🔥 Fire (Laranja)</option>
+  </select>
+  <label>Duração</label>
+  <select id="dur">
+    <option value="8">8 segundos</option>
+    <option value="15" selected>15 segundos</option>
+    <option value="30">30 segundos</option>
+  </select>
+</div>
+
+<div class="preview-wrap">
+  <canvas id="cv" width="540" height="960"></canvas>
+</div>
+
+<div class="status" id="status">✓ Pronto para gerar</div>
+
+<div class="prog-wrap" id="progWrap">
+  <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+  <div class="prog-txt" id="progTxt">A gerar...</div>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-prev" onclick="updatePreview()">👁 Preview</button>
+  <button class="btn btn-rec" id="recBtn" onclick="startRecord()">⏺ Gerar Vídeo</button>
+</div>
+
+<!-- DOWNLOAD SECTION -->
+<div class="dl-section" id="dlSection">
+  <h3>✅ Vídeo Gerado com Sucesso!</h3>
+  <p>Clica no botão abaixo para descarregar.<br>Se não funcionar, pressiona e segura → "Salvar link"</p>
+  <video class="video-preview" id="videoPreview" controls playsinline muted></video>
+  <a id="dlLink" class="dl-btn" download="EstudarMZ_TikTok.webm">⬇️ DESCARREGAR VÍDEO</a>
+  <p style="color:#555;font-size:11px;">Ficheiro: .webm — abre no Android com qualquer player de vídeo</p>
+</div>
+
+<script>
+const W=540,H=960;
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+
+const SCHEMES={
+  tiktok:{bg1:'#0a0a0a',bg2:'#1a0010',a1:'#ff0050',a2:'#00f2ea',txt:'#ffffff'},
+  gold:  {bg1:'#080600',bg2:'#1a1200',a1:'#ffd700',a2:'#ff8800',txt:'#ffffff'},
+  neon:  {bg1:'#06000f',bg2:'#0a0020',a1:'#aa00ff',a2:'#00ffff',txt:'#ffffff'},
+  moz:   {bg1:'#001a08',bg2:'#002a00',a1:'#00cc55',a2:'#fce100',txt:'#ffffff'},
+  fire:  {bg1:'#0f0500',bg2:'#1f0a00',a1:'#ff6600',a2:'#ff2200',txt:'#ffffff'}
+};
+
+const TPLS={
+  pergunta:{l1:'SABES ISTO? 🤔',l2:'A raiz quadrada de 144 é... 🤔',l3:'É 12! 🎯 Pratica no EstudarMZ',r:'📚 estudarmz.github.io'},
+  dica:    {l1:'💡 DICA DO DIA',l2:'Estuda as últimas 5 provas — 80% das perguntas repetem!',l3:'✅ Começa hoje no EstudarMZ!',r:'📚 estudarmz.github.io'},
+  motivacao:{l1:'🔥 NÃO DESISTAS',l2:'Cada hora de estudo hoje é uma vitória amanhã. O exame está chegando!',l3:'💪 Tu consegues! EstudarMZ',r:'📚 estudarmz.github.io'},
+  promo:   {l1:'📚 ESTUDARMZ',l2:'Provas anteriores + resumos para a 10ª e 12ª classe. Só 50 MZN/mês!',l3:'🇲🇿 Acessa agora!',r:'🔗 estudarmz.github.io'},
+  resultado:{l1:'🏆 JÁ PASSARAM',l2:'+2000 estudantes usam o EstudarMZ para passar nos exames nacionais!',l3:'📲 Junta-te a eles!',r:'📚 estudarmz.github.io'},
+  custom:  {l1:'',l2:'',l3:'',r:'📚 estudarmz.github.io'}
+};
+
+let raf=null,frame=0;
+
+function setTpl(t,el){
+  document.querySelectorAll('.tpl-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const d=TPLS[t];
+  document.getElementById('l1').value=d.l1;
+  document.getElementById('l2').value=d.l2;
+  document.getElementById('l3').value=d.l3;
+  document.getElementById('rodape').value=d.r;
+  updatePreview();
+}
+
+function getS(){return SCHEMES[document.getElementById('esquema').value];}
+function getT(){return{l1:document.getElementById('l1').value,l2:document.getElementById('l2').value,l3:document.getElementById('l3').value,r:document.getElementById('rodape').value};}
+
+function drawFrame(tick,s,t){
+  const c=ctx;
+  c.clearRect(0,0,W,H);
+  // BG
+  const bg=c.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,s.bg1);bg.addColorStop(1,s.bg2);
+  c.fillStyle=bg;c.fillRect(0,0,W,H);
+  // Grid
+  c.save();c.globalAlpha=0.05;c.strokeStyle=s.a1;c.lineWidth=1;
+  const off=(tick*1.2)%60;
+  for(let x=-60+off;x<W+60;x+=60){c.beginPath();c.moveTo(x,0);c.lineTo(x,H);c.stroke();}
+  for(let y=-60+off;y<H+60;y+=60){c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  c.restore();
+  // Particles
+  c.save();
+  for(let i=0;i<14;i++){
+    const px=(Math.sin(tick*0.02+i*1.7)*0.5+0.5)*W;
+    const py=(Math.cos(tick*0.015+i*2.3)*0.5+0.5)*H;
+    c.globalAlpha=0.2+Math.sin(tick*0.04+i)*0.1;
+    c.fillStyle=i%2===0?s.a1:s.a2;
+    c.beginPath();c.arc(px,py,2,0,Math.PI*2);c.fill();
+  }
+  c.restore();
+  // Top bar
+  const bar=c.createLinearGradient(0,0,W,0);
+  bar.addColorStop(0,s.a1);bar.addColorStop(1,s.a2);
+  c.fillStyle=bar;c.fillRect(0,0,W,8);
+  // Glow
+  const gl=c.createRadialGradient(W/2,H*0.3,0,W/2,H*0.3,280);
+  gl.addColorStop(0,s.a1+'22');gl.addColorStop(1,'transparent');
+  c.fillStyle=gl;c.fillRect(0,0,W,H);
+
+  // L1 TITULO
+  const p1=Math.min(1,tick/15);
+  c.save();c.globalAlpha=p1;
+  c.font=`900 64px 'Segoe UI',sans-serif`;
+  c.textAlign='center';
+  c.shadowColor=s.a1;c.shadowBlur=25;
+  c.fillStyle=s.a1;
+  c.fillText(t.l1,W/2,H*0.24+(1-p1)*50,W-60);
+  c.shadowBlur=0;c.restore();
+
+  // Divider
+  const p2=Math.min(1,(tick-8)/12);
+  if(p2>0){
+    c.save();c.globalAlpha=p2;
+    const dg=c.createLinearGradient(W/2-180*p2,0,W/2+180*p2,0);
+    dg.addColorStop(0,'transparent');dg.addColorStop(0.5,s.a2);dg.addColorStop(1,'transparent');
+    c.strokeStyle=dg;c.lineWidth=2;
+    c.beginPath();c.moveTo(W/2-180*p2,H*0.32);c.lineTo(W/2+180*p2,H*0.32);c.stroke();
+    c.restore();
+  }
+
+  // L2 TEXTO
+  const p3=Math.min(1,(tick-12)/15);
+  if(p3>0){
+    c.save();c.globalAlpha=p3;
+    c.font=`600 44px 'Segoe UI',sans-serif`;
+    c.textAlign='center';c.fillStyle=s.txt;
+    wrapText(c,t.l2,W/2,H*0.44,W-80,58);
+    c.restore();
+  }
+
+  // L3 CTA BOX
+  const p4=Math.min(1,(tick-22)/12);
+  if(p4>0){
+    c.save();c.globalAlpha=p4;
+    const bx=30,by=H*0.64-38,bw=W-60,bh=76;
+    c.fillStyle=s.a1+'22';
+    roundRect(c,bx,by,bw,bh,16);c.fill();
+    c.strokeStyle=s.a1;c.lineWidth=1.5;c.globalAlpha=p4*0.5;
+    roundRect(c,bx,by,bw,bh,16);c.stroke();
+    c.globalAlpha=p4;
+    c.font=`700 40px 'Segoe UI',sans-serif`;
+    c.textAlign='center';c.fillStyle=s.a2;
+    c.shadowColor=s.a2;c.shadowBlur=12;
+    c.fillText(t.l3,W/2,H*0.64+16,W-80);
+    c.shadowBlur=0;c.restore();
+  }
+
+  // Pulse
+  if(tick>30){
+    const pr=((tick-30)%50)/50;
+    c.save();c.globalAlpha=(1-pr)*0.2;
+    c.strokeStyle=s.a1;c.lineWidth=3;
+    c.beginPath();c.arc(W/2,H*0.24,90+pr*130,0,Math.PI*2);c.stroke();
+    c.restore();
+  }
+
+  // Footer
+  const rfg=c.createLinearGradient(0,H-90,0,H);
+  rfg.addColorStop(0,'transparent');rfg.addColorStop(1,s.bg2+'dd');
+  c.fillStyle=rfg;c.fillRect(0,H-90,W,90);
+  c.font=`500 30px 'Segoe UI',sans-serif`;
+  c.textAlign='center';c.fillStyle='#ffffff66';
+  c.fillText(t.r,W/2,H-30);
+  // Bottom bar
+  c.fillStyle=bar;c.fillRect(0,H-7,W,7);
+}
+
+function wrapText(c,text,x,y,maxW,lh){
+  const words=text.split(' ');let line='',ly=y;
+  for(let w of words){
+    const test=line+w+' ';
+    if(c.measureText(test).width>maxW&&line){c.fillText(line.trim(),x,ly);line=w+' ';ly+=lh;}
+    else line=test;
+  }
+  c.fillText(line.trim(),x,ly);
+}
+
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();
+}
+
+function updatePreview(){
+  if(raf)cancelAnimationFrame(raf);
+  frame=0;
+  function loop(){drawFrame(frame,getS(),getT());frame=(frame+1)%240;raf=requestAnimationFrame(loop);}
+  loop();
+}
+
+async function startRecord(){
+  const dur=parseInt(document.getElementById('dur').value);
+  const fps=30,total=dur*fps;
+  const s=getS(),t=getT();
+  if(raf){cancelAnimationFrame(raf);raf=null;}
+  const recBtn=document.getElementById('recBtn');
+  const dlSection=document.getElementById('dlSection');
+  const dlLink=document.getElementById('dlLink');
+  const videoPreview=document.getElementById('videoPreview');
+  const progWrap=document.getElementById('progWrap');
+  const progFill=document.getElementById('progFill');
+  const progTxt=document.getElementById('progTxt');
+  const status=document.getElementById('status');
+
+  recBtn.disabled=true;
+  dlSection.classList.remove('show');
+  progWrap.classList.add('show');
+  status.className='status rec';
+  status.textContent='⏺ A gravar... aguarda';
+
+  const chunks=[];
+  const mimes=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'];
+  let mime='';
+  for(const m of mimes){if(typeof MediaRecorder!=='undefined'&&MediaRecorder.isTypeSupported(m)){mime=m;break;}}
+
+  const stream=cv.captureStream(fps);
+  const opts=mime?{mimeType:mime,videoBitsPerSecond:4000000}:{};
+  const mr=new MediaRecorder(stream,opts);
+  mr.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+  mr.onstop=()=>{
+    const type=mime||'video/webm';
+    const blob=new Blob(chunks,{type});
+    const url=URL.createObjectURL(blob);
+    // Set video preview
+    videoPreview.src=url;
+    videoPreview.load();
+    // Set download link
+    const ext=mime.includes('mp4')?'mp4':'webm';
+    dlLink.href=url;
+    dlLink.download=`EstudarMZ_TikTok.${ext}`;
+    dlLink.textContent=`⬇️ DESCARREGAR VÍDEO (.${ext.toUpperCase()})`;
+    dlSection.classList.add('show');
+    progWrap.classList.remove('show');
+    status.className='status ok';
+    status.textContent='✅ Pronto! Clica em Descarregar';
+    recBtn.disabled=false;
+    recBtn.textContent='⏺ Gerar Novo';
+    updatePreview();
+    // Scroll to download
+    dlSection.scrollIntoView({behavior:'smooth'});
+  };
+
+  mr.start(200);
+  let f=0;
+  function renderFrame(){
+    if(f>=total){mr.stop();return;}
+    const tick=(f/fps)*40;
+    drawFrame(tick,s,t);
+    const pct=Math.round(f/total*100);
+    progFill.style.width=pct+'%';
+    progTxt.textContent=`A gerar... ${pct}% — ${Math.round(f/fps)}s / ${dur}s`;
+    f++;
+    requestAnimationFrame(renderFrame);
+  }
+  renderFrame();
+}
+
+updatePreview();
+</script>
+</body>
+  </html>
